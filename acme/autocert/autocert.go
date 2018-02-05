@@ -272,13 +272,13 @@ func (m *Manager) HTTPHandler(fallback http.Handler) http.Handler {
 		// because we don't wait for a new certificate issuance here.
 		ctx, cancel := context.WithTimeout(r.Context(), time.Minute)
 		defer cancel()
-		if err := m.hostPolicy()(ctx, r.Host); err != nil {
-			http.Error(w, err.Error(), http.StatusForbidden)
-			return
-		}
 		data, err := m.httpToken(ctx, r.URL.Path)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			fallback.ServeHTTP(w, r)
+			return
+		}
+		if err := m.hostPolicy()(ctx, r.Host); err != nil {
+			http.Error(w, err.Error(), http.StatusForbidden)
 			return
 		}
 		w.Write(data)
